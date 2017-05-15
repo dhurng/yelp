@@ -2,30 +2,72 @@
 Simple Yelp with Python and Flask
 """
 
-from flask import Flask, session, redirect, url_for, escape, request
+from flask import Flask, session, redirect, url_for, escape, request, render_template, abort
+import sqlite3
+
+# conn = sqlite3.connect('database.db')
+# print "opened db success!"
+#
+# conn.execute('CREATE TABLE students (name TEST, addr TEXT, city TEST, pint TEST)')
+# print "table good"
+# conn.close()
+
 app = Flask(__name__)
-app.secret_key = 'nice'
 
 @app.route('/')
-def index():
-    if 'username' in session:
-        username = session['username']
-        return 'Logged in as ' + username + '<br>' + \
-               "<b><a href = '/logout'>click here to log out</a></b>"
-    return "You are not logged in <br><a href = '/login'></b>" + \
-           "click here to log in</b></a>"
+def home():
+    return render_template('home.html')
 
-@app.route('/login', methods = ['GET', 'POST'])
+@app.route('/list')
+def list():
+    con = sql.connect('database.db')
+    con.row_factory = sql.Row
+
+    cur = con.cursor()
+    cur.execute("select * from students")
+
+    rows = cur.fetchall()
+    return render_template("list.html", rows = rows)
+
+@app.route('/addrec', methods=['POST', 'GET'])
+def addrec():
+    if request.method == 'POST':
+        try:
+            nm = request.form['nm']
+            addr = request.form['add']
+            city = request.form['city']
+            pin - request.form['pin']
+
+            with sql.connect('database.db') as con:
+                cur = con.cursor()
+                cur.execute("INSERT INTO students (name,addr,city,pin)\
+                    VALUES(?, ?, ?, ?)",(nm,addr,city,pin))
+
+                con.commit()
+                msg = "successfully added!"
+        except:
+            con.rollback()
+            msg = "error in insert"
+        finally:
+            return render_template('result.html', msg = msg)
+            con.close()
+
+@app.route('/enternew')
+def new_user():
+    return render_template('user.html')
+
+@app.route('/login',methods = ['POST', 'GET'])
 def login():
     if request.method == 'POST':
-        session['username'] = request.form['username']
+        if request.form['username'] == 'admin':
+            return redirect(url_for('success'))
+        else:
+            abort(401)
+    else:
         return redirect(url_for('index'))
-    return '''
-       <form action = "" method = "post">
-          <p><input type = text name = username/></p>
-          <p<<input type = submit value = Login/></p>
-       </form>
-       '''
+@app.route('/success')
+def success():
+    return 'logged in successfully'
 
 @app.route('/logout')
 def logout():
